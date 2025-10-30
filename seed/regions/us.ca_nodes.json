@@ -1,0 +1,8 @@
+[
+  { "name": "Imperial Beach", "lat": 32.583, "lon": -117.133 },
+  { "name": "Coronado", "lat": 32.686, "lon": -117.178 },
+  { "name": "Point Loma", "lat": 32.715, "lon": -117.251 },
+  { "name": "La Jolla", "lat": 32.847, "lon": -117.275 },
+  { "name": "Mission Beach", "lat": 32.773, "lon": -117.253 },
+  { "name": "Ocean Beach", "lat": 32.753, "lon": -117.251 }
+]

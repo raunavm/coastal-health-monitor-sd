@@ -1,0 +1,51 @@
+[
+  {
+    "id": "1",
+    "name": "La Jolla Shores",
+    "city": "La Jolla",
+    "coords": [-117.2742, 32.8473],
+    "baselineStatus": "open"
+  },
+  {
+    "id": "2",
+    "name": "Pacific Beach",
+    "city": "San Diego",
+    "coords": [-117.2528, 32.7714],
+    "baselineStatus": "open"
+  },
+  {
+    "id": "3",
+    "name": "Mission Beach",
+    "city": "San Diego",
+    "coords": [-117.2528, 32.7714],
+    "baselineStatus": "open"
+  },
+  {
+    "id": "4",
+    "name": "Ocean Beach",
+    "city": "San Diego",
+    "coords": [-117.2528, 32.7714],
+    "baselineStatus": "open"
+  },
+  {
+    "id": "5",
+    "name": "Coronado Beach",
+    "city": "Coronado",
+    "coords": [-117.1831, 32.6859],
+    "baselineStatus": "open"
+  },
+  {
+    "id": "6",
+    "name": "Imperial Beach",
+    "city": "Imperial Beach",
+    "coords": [-117.1131, 32.5739],
+    "baselineStatus": "advisory"
+  },
+  {
+    "id": "7",
+    "name": "Silver Strand",
+    "city": "Coronado",
+    "coords": [-117.1531, 32.6259],
+    "baselineStatus": "open"
+  }
+]

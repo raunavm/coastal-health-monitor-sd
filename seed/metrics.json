@@ -1,0 +1,11 @@
+{
+  "percentDaysImpacted": {
+    "imperialBeach": 45.2,
+    "coronado": 12.8,
+    "pointLoma": 8.3
+  },
+  "meanLeadTime": {
+    "modelVsOfficial": 18.5
+  },
+  "lastUpdated": "2025-01-27T00:00:00Z"
+}

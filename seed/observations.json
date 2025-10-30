@@ -1,0 +1,40 @@
+{
+  "reports": [
+    {
+      "id": "report_seed_1",
+      "type": "odor",
+      "severity": 2,
+      "lat": 32.5739,
+      "lng": -117.1131,
+      "beach_id": 6,
+      "note": "Strong sewage smell near the pier",
+      "moderated": true,
+      "approved": true,
+      "created_at": "2025-01-26T14:30:00Z"
+    },
+    {
+      "id": "report_seed_2",
+      "type": "debris",
+      "severity": 1,
+      "lat": 32.7714,
+      "lng": -117.2528,
+      "beach_id": 2,
+      "note": "Some plastic bottles on the beach",
+      "moderated": true,
+      "approved": true,
+      "created_at": "2025-01-26T10:15:00Z"
+    },
+    {
+      "id": "report_seed_3",
+      "type": "odor",
+      "severity": 3,
+      "lat": 32.5739,
+      "lng": -117.1131,
+      "beach_id": 6,
+      "note": "Very strong odor, avoid this area",
+      "moderated": false,
+      "approved": false,
+      "created_at": "2025-01-27T08:00:00Z"
+    }
+  ]
+}

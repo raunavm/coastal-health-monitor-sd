@@ -1,263 +1,242 @@
-# SD Beach Safety App
+```markdown
+# Coastal Health Monitor (EN/ES)
 
-AI-powered beach safety predictions for San Diego County beaches.
+Next.js + FastAPI + ONNX (risk tiles) + Smoke Tests + Status Page
 
-## Features
+## What this app does
 
-- 🗺️ Interactive map with real-time beach status
-- 🤖 AI-powered risk predictions (24-72h forecasts)
-- 🌊 Ocean conditions (water temp, waves, tides)
-- 👥 Community-sourced reports with moderation
-- 🌐 Bilingual support (English/Spanish)
-- 📱 PWA-ready responsive design
+- Shows beach safety tiles (low/medium/high + uncertainty) for the San Diego area.
+- Uses a lightweight ONNX model served via FastAPI (`/predict`) to score tiles.
+- Exposes a Next.js API (`/api/tiles`) that queries the Python service.
+- Includes a status page (`/status`) showing model metadata and runtime health.
+- Has a simple CSV → ONNX training path for quick experimentation.
 
-## Quick Start
+---
 
-### Prerequisites
+## Project layout
 
-- Node.js 18+ and npm/pnpm
-- Python 3.9+ (for risk prediction service)
+```
 
-### 1. Install Dependencies
+coastal-health-monitor-sd/
+├─ app/                      # Next.js routes (pages, API)
+│  ├─ api/
+│  │  ├─ tiles/route.ts      # Frontend → Python risk scoring
+│  │  └─ status/route.ts     # Aggregates /healthz and /metrics
+│  └─ status/page.tsx        # Service Status UI
+├─ lib/, components/, seed/  # Front-end logic, UI, seed data
+├─ pyservice/                # FastAPI + ONNXRuntime
+│  ├─ predict.py             # /healthz /metrics /predict
+│  ├─ train_residual.py      # CSV→sklearn→ONNX exporter
+│  ├─ tools/check_beach_csv.py
+│  ├─ scripts/smoke.sh       # Quick end-to-end sanity
+│  └─ data/beach_samples.csv # Tiny demo dataset
+└─ README.md
 
-\`\`\`bash
-npm install
-# or
+````
+
+---
+
+## Quick start (local)
+
+### 1) Frontend (Next.js)
+
+```bash
+# From repo root
 pnpm install
-\`\`\`
+pnpm dev
+# Next.js will start at http://localhost:3000 (or next free port)
+````
 
-### 2. Start Python Service
+### 2) Python service (FastAPI + ONNXRuntime)
 
-\`\`\`bash
+```bash
 cd pyservice
-pip install -r requirements.txt
-uvicorn predict:app --host 0.0.0.0 --port 8000
-\`\`\`
+python -m venv .venv
+source .venv/bin/activate
 
-### 3. Configure Environment
+python -m pip install -U pip
+python -m pip install -r requirements.txt
+# (or)
+python -m pip install -U "uvicorn[standard]" fastapi onnxruntime pydantic numpy pandas scikit-learn skl2onnx watchfiles
 
-\`\`\`bash
-export RISK_PY_URL=http://localhost:8000
-\`\`\`
+# train (optional: exports models/beach-risk.onnx)
+python train_residual.py --csv data/beach_samples.csv --out models/beach-risk.onnx
 
-### 4. Run Next.js Dev Server
+# run service
+export MODEL_PATH=models/beach-risk.onnx
+python -m uvicorn predict:app --host 127.0.0.1 --port 8000 --reload --reload-dir . --reload-exclude ".venv/*"
+```
 
-\`\`\`bash
-npm run dev
-\`\`\`
+### 3) Wire the frontend to Python
 
-Visit `http://localhost:3000` to see the app.
+The frontend reads `PY_URL`:
 
-## Scripts
+```bash
+# In another terminal, from repo root
+export PY_URL="http://127.0.0.1:8000"
+pnpm dev
+```
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run i18n:check` - Verify EN/ES translation parity
-- `npm run test:e2e` - Run Playwright tests (if installed)
+---
 
-## Architecture
+## Smoke test (end-to-end)
 
-### Frontend (Next.js 16)
-- **Pages**: Home, Map, Beach Details, Report, Admin, Status, Settings
-- **Components**: MapCanvas (MapLibre GL), BeachSheet, ReportForm, SafetyCard
-- **i18n**: Custom React Context with EN/ES translations
-- **Styling**: Tailwind CSS v4 with shadcn/ui components
+With both servers up (Next.js and FastAPI), run:
 
-### Backend (API Routes)
-- `/api/sd/beaches` - Beach list (seed data)
-- `/api/sd/status` - County status scraper
-- `/api/sd/ocean` - Ocean conditions
-- `/api/tiles` - Risk prediction tiles (calls Python service)
-- `/api/reports` - Community reports (GET/POST)
-- `/api/community/summary` - Aggregated feedback
-- `/api/admin/reports/[id]/moderate` - Moderation endpoint
-- `/api/metrics` - System health + Python service status
-- `/api/dataset/log` - Dataset logger for training (JSONL)
-
-### Python Service (FastAPI)
-- `POST /predict` - ONNX-based risk prediction
-- `GET /healthz` - Health check with ONNX status
-
-### Data Layer
-- **Current**: Seed JSON files + in-memory cache
-- **Future**: Swap to Supabase/Neon/KV via adapter pattern
-
-## Python Training & ONNX Integration
-
-### 7-Feature Vector (Exact Order & Units)
-
-The tiles API sends exactly 7 features to the Python service in SI units:
-
-| # | Feature | Unit | Transform | Code Location |
-|---|---------|------|-----------|---------------|
-| 1 | `rainfall` | mm | 72h sum from hourly precip | `app/api/tiles/route.ts:60` |
-| 2 | `wind` | m/s | mph × 0.44704 | `app/api/tiles/route.ts:93` |
-| 3 | `tides` | 0-1 | (ft × 0.3048) / 3.0, clamped | `app/api/tiles/route.ts:96` |
-| 4 | `waves` | m | ft × 0.3048 | `app/api/tiles/route.ts:99` |
-| 5 | `sst` | °C | (°F - 32) × (5/9) | `app/api/tiles/route.ts:102` |
-| 6 | `community` | 0-1 | none=0, minor=0.33, moderate=0.66, strong=1.0 | `app/api/tiles/route.ts:105` |
-| 7 | `geomId` | string | Beach ID (e.g., "IB", "COR") - Python converts to index | `app/api/tiles/route.ts:108` |
-
-**Python receives JSON:**
-\`\`\`json
-{
-  "rainfall": 12.3,
-  "wind": 3.9,
-  "tides": 0.42,
-  "waves": 1.8,
-  "sst": 17.6,
-  "community": 0.66,
-  "geomId": "IB",
-  "when": "t24"
-}
-\`\`\`
-
-**Python converts to numpy array:**
-\`\`\`python
-[rainfall, wind, tides, waves, sst, community, geomId_index]
-\`\`\`
-
-### ONNX Model
-
-Place your trained ONNX model at:
-\`\`\`
-pyservice/risk_residual.onnx
-\`\`\`
-
-The Python service will automatically load it on startup. If missing, it falls back to a simple physics-based model.
-
-### Dataset Logging (for Training)
-
-Enable dataset logging to collect training data:
-
-\`\`\`bash
-export LOG_DATASET=1
-export REGION_DATASET_DIR=./data
-\`\`\`
-
-JSONL files are written to:
-\`\`\`
-./data/<regionId>/dataset_YYYYMM.jsonl
-\`\`\`
-
-**Sample JSONL row:**
-\`\`\`json
-{
-  "ts": "2025-10-30T19:01:00Z",
-  "regionId": "us.ca.sd",
-  "lat": 32.58,
-  "lon": -117.13,
-  "when": "t24",
-  "beachId": "IB",
-  "features": {
-    "rainfall": 12.3,
-    "wind": 3.9,
-    "tides": 0.42,
-    "waves": 1.8,
-    "sst": 17.6,
-    "community": 0.66,
-    "geomId_index": "IB"
-  },
-  "label": "advisory"
-}
-\`\`\`
-
-### Running the Full Stack
-
-**Python Service:**
-\`\`\`bash
+```bash
 cd pyservice
-pip install -r requirements.txt
-uvicorn predict:app --host 0.0.0.0 --port 8000
-\`\`\`
+NEXT_PORT=3000 ./scripts/smoke.sh
+# Output should resemble:
+# Calm highs: 0 | Storm highs: 64
+# smoke ok
+```
 
-**Next.js (Development):**
-\`\`\`bash
-cd ..
-npm install
-npm run i18n:check
-npm run dev
-\`\`\`
+If Next.js selected a higher port, set `NEXT_PORT` accordingly (for example, 3002 or 3004).
 
-**Environment Variables:**
-\`\`\`bash
-# For live predictions
-export RISK_PY_URL=http://127.0.0.1:8000
-export RISK_PY_DEV_MOCK=0
+---
 
-# For training data collection
-export LOG_DATASET=1
-export REGION_DATASET_DIR=./data
-\`\`\`
+## Key endpoints
 
-**Dev Mock Mode:**
-\`\`\`bash
-# Use deterministic mock data (no Python service needed)
-export RISK_PY_DEV_MOCK=1
-\`\`\`
+### FastAPI (Python)
 
-## Project Structure
+* `GET /healthz` → `{ ok: true, onnx: true, meta: {...} }`
+* `GET /metrics` → service uptime, request counts, model hash
+* `POST /predict`
 
-\`\`\`
-/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   │   ├── tiles/         # Risk prediction tiles (Python-only)
-│   │   └── dataset/       # Dataset logger for training
-│   ├── map/               # Map page
-│   ├── beach/[id]/        # Beach detail page
-│   ├── report/            # Report submission
-│   ├── admin/             # Moderation dashboard
-│   └── status/            # System status
-├── components/            # React components
-├── lib/                   # Utilities and business logic
-│   ├── data/             # Data adapters (seedAdapter)
-│   ├── forecast/         # Forecast helpers
-│   ├── sanitize/         # EXIF stripping (placeholder)
-│   └── i18n.tsx          # Internationalization
-├── pyservice/            # Python FastAPI service
-│   ├── predict.py        # ONNX inference + physics fallback
-│   └── risk_residual.onnx # Trained model (not in repo)
-├── seed/                 # JSON seed data
-├── tests/                # Playwright E2E tests
-└── scripts/              # Build/check scripts
+  ```json
+  {
+    "geom_id": "IB",
+    "features": [rainfall72, wind, tide_phase, wave_height, sst_c, community, geom_idx]
+  }
+  ```
 
-## Known Limitations
+### Next.js
 
-- **In-memory storage**: Reports lost on restart (use adapter to swap to DB)
-- **Mock beach data**: Not yet connected to ArcGIS API
-- **ONNX model missing**: `risk_residual.onnx` not in repo
-- **Photo upload**: EXIF stripping placeholder (needs sharp integration)
-- **Admin auth**: Dev-only guard (no real authentication)
+* `GET /api/tiles?when=now&geomId=IB&lat=32.574&lng=-117.133&rainfall=0&wind=1&tides=0.2&waves=0.3&sst=18&community=0.1`
+* `GET /api/status` → combines Python `/healthz` + `/metrics`
+* `GET /status` (page) → visual Model/Runtime status
 
-## i18n Coverage
+---
 
-Run `npm run i18n:check` to verify EN/ES parity. All UI strings should use the `t()` function from `lib/i18n.tsx`.
+## Training (CSV → ONNX)
 
-## Testing
+1. Put your CSV at `pyservice/data/*.csv` with columns:
 
-Playwright smoke tests verify API contracts:
+   ```
+   date,geom_id,rainfall72_mm,wind_ms,tide_phase,wave_height_m,sst_c,community_score,status
+   ```
 
-\`\`\`bash
-npm run test:e2e
-\`\`\`
+   `status ∈ {normal, advisory, closure}` is mapped to a numeric label.
+2. Validate CSV:
 
-## Deployment
+   ```bash
+   cd pyservice
+   python tools/check_beach_csv.py data/beach_samples.csv
+   ```
+3. Export ONNX:
 
-1. Deploy Python service to a container platform (Fly.io, Railway, etc.)
-2. Set `RISK_PY_URL` environment variable in Vercel
-3. Deploy Next.js app to Vercel
-4. Swap data adapter to persistent storage (Supabase/Neon)
+   ```bash
+   python train_residual.py --csv data/beach_samples.csv --out models/beach-risk.onnx
+   ```
+4. Restart service with the new model:
 
-## Contributing
+   ```bash
+   export MODEL_PATH=models/beach-risk.onnx
+   python -m uvicorn predict:app --host 127.0.0.1 --port 8000 --reload
+   ```
 
-1. Check i18n coverage before committing: `npm run i18n:check`
-2. Add translations for new UI strings in `lib/translations.json`
-3. Use the data adapter pattern for new storage needs
-4. Follow existing API JSON response patterns
+---
+
+## Environment variables
+
+* Frontend
+
+  * `PY_URL` (default: `http://127.0.0.1:8000`)
+  * `NEXT_PUBLIC_*` for browser-exposed config (optional)
+* Python
+
+  * `MODEL_PATH` → path to `.onnx` file
+
+You can place app variables into `.env.local` (Next.js) and use `export` for the Python side during local dev.
+
+---
+
+## Troubleshooting
+
+* Port hopping: Next.js will move 3000 → 3001 → 3002 … if ports are busy. Use the printed URL or set `NEXT_PORT` for scripts.
+* `uvicorn: command not found`: You’re not in the venv. `source .venv/bin/activate`, then reinstall `uvicorn[standard]`.
+* `422 Unprocessable Content` from `/predict`: Body shape/keys don’t match. Ensure you send the expected JSON with all 7 features.
+* Kill stray servers:
+
+  ```bash
+  pkill -f "uvicorn predict:app" 2>/dev/null || true
+  lsof -i :3000   # see what’s on ports
+  ```
+
+---
+
+## Git: first commit and push
+
+```bash
+# From repo root
+git init
+git branch -M main
+
+# .gitignore is already configured for Node & Python artifacts
+git add -A
+git commit -m "feat: initial working app (Next.js + FastAPI + ONNX + smoke test + status page)"
+
+# set remote (replace with your repo URL)
+git remote add origin https://github.com/<you>/coastal-health-monitor-sd.git
+
+# If remote is empty or only has boilerplate and you want to overwrite:
+git push --force-with-lease -u origin main
+
+# If you want to keep remote README and merge:
+# git fetch origin
+# git pull --rebase origin main
+# (resolve conflicts if any)
+# git push -u origin main
+```
+
+---
+
+## Congressional App Challenge: demo video checklist (2–3 minutes)
+
+**Story arc**
+
+1. Problem (10–15s): Sewage spills and pollution risk on San Diego beaches are hard to see in real time.
+2. Solution (20–30s): Coastal Health Monitor—maps risk tiles (Low/Med/High) using environmental signals and simple ML.
+3. Live demo (60–90s):
+
+   * Open the app home and show the map and tiles.
+   * Toggle “calm vs storm” inputs using the querystring (or show two tabs): risk shifts from mostly low/medium to high.
+   * Open a beach page to show forecast strip and safety/comfort cards.
+   * Visit `/status` to show service health, model rows, hash, and last request time.
+4. How it helps (15–20s): Residents, surfers, and schools get quick guidance; can integrate with city alerts and cleanup organizations.
+5. What’s next (10–20s): Larger training set, partner data feeds (rain gauges, tides), bilingual UI, and open API for researchers.
+
+**Recording tips**
+
+* Use a clean browser window at `http://localhost:3000` (or whichever port is active).
+* Pre-run both servers so pages load instantly.
+* Keep zoom at 100% for legibility.
+* Add subtitles briefly explaining each step.
+
+---
+
+## Roadmap
+
+* Expand dataset (more days, more beaches) for improved generalization.
+* Add HAB / bacterial load proxies as features when sources are available.
+* Offline tiles precompute and caching for snappy map interactions.
+* PWA install and background sync for advisories.
+
+---
 
 ## License
 
-MIT
+MIT (adjust as needed)
+
+```
+```

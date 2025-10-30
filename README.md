@@ -15,20 +15,7 @@ Next.js + FastAPI + ONNX (risk tiles) + Smoke Tests + Status Page
 ## Project layout
 
 ```text
-coastal-health-monitor-sd/
-├─ app/                      # Next.js routes (pages, API)
-│  ├─ api/
-│  │  ├─ tiles/route.ts      # Frontend -> Python risk scoring
-│  │  └─ status/route.ts     # Aggregates /healthz and /metrics
-│  └─ status/page.tsx        # Service Status UI
-├─ lib/, components/, seed/  # Front-end logic, UI, seed data
-├─ pyservice/                # FastAPI + ONNXRuntime
-│  ├─ predict.py             # /healthz /metrics /predict
-│  ├─ train_residual.py      # CSV -> sklearn -> ONNX exporter
-│  ├─ tools/check_beach_csv.py
-│  ├─ scripts/smoke.sh       # Quick end-to-end sanity
-│  └─ data/beach_samples.csv # Tiny demo dataset
-└─ README.md
+add layout later
 
 
 ```

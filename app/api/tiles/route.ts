@@ -25,6 +25,16 @@ export async function GET(req: NextRequest) {
   const lat = q.get("lat") ? Number(q.get("lat")) : undefined
   const lng = q.get("lng") ? Number(q.get("lng")) : undefined
 
+  // Calculate timestamp based on 'when'
+  const offsetMap: Record<string, number> = {
+    now: 0,
+    t24: 24,
+    t48: 48,
+    t72: 72
+  }
+  const offset = offsetMap[when as string] || 0
+  const timestamp = Date.now() + offset * 3600 * 1000
+
   try {
     // Run inference locally (Serverless / Node.js)
     const result = await predictRisk({
@@ -36,7 +46,8 @@ export async function GET(req: NextRequest) {
       sst,
       community,
       lat,
-      lng
+      lng,
+      timestamp
     })
 
     return Response.json({

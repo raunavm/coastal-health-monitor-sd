@@ -23,6 +23,7 @@ export interface InferenceInput {
     hour?: number;
     month?: number;
     rain_trend?: number;
+    timestamp?: number; // Epoch ms for target time
 
     // Optional center for grid generation
     lat?: number;
@@ -121,13 +122,13 @@ async function getSession(): Promise<ort.InferenceSession> {
 
 // Main Predict Function
 export async function predictRisk(input: InferenceInput): Promise<InferenceResult> {
-    const sess = await getSession();
-
     // 1. Prepare Features
     const now = new Date();
-    const hour = input.hour ?? now.getHours();
-    const month = input.month ?? (now.getMonth() + 1); // JS months are 0-indexed
-    const isWeekend = (now.getDay() === 0 || now.getDay() === 6) ? 1 : 0;
+    const targetDate = input.timestamp ? new Date(input.timestamp) : now;
+
+    const hour = input.hour ?? targetDate.getHours();
+    const month = input.month ?? (targetDate.getMonth() + 1);
+    const isWeekend = (targetDate.getDay() === 0 || targetDate.getDay() === 6) ? 1 : 0;
     const rainTrend = input.rain_trend ?? 1.0;
 
     const hourSin = Math.sin(2 * Math.PI * hour / 24);
@@ -136,56 +137,59 @@ export async function predictRisk(input: InferenceInput): Promise<InferenceResul
     const monthCos = Math.cos(2 * Math.PI * (month - 1) / 12);
     const geomIdx = getGeomIdx(input.geomId);
 
-    const features = new Float32Array([
-        input.rainfall,
-        input.wind,
-        input.tides,
-        input.waves,
-        input.sst,
-        input.community,
-        hourSin,
-        hourCos,
-        monthSin,
-        monthCos,
-        isWeekend,
-        rainTrend,
-        geomIdx
-    ]);
-
-    // 2. Run Inference
-    const tensor = new ort.Tensor('float32', features, [1, 13]);
-    const feeds = { x: tensor };
-    const results = await sess.run(feeds);
-
-    // Output is named 'variable' usually in sklearn-onnx, or check model metadata
-    // Sklearn-onnx usually outputs 'variable' or 'output_label'/'output_probability'
-    // But for Regressor it's usually 'variable'.
-    // Let's grab the first output whatever it is.
-    const outputName = sess.outputNames[0];
-    const outputTensor = results[outputName];
-    const residual = Number(outputTensor.data[0]);
-
-    // 3. Combine with Physics
+    // Calculate Physics Base (Always available)
     const base = getPhysicsScore(input.rainfall, input.wind, input.tides, input.community);
+
+    let residual = 0;
+    let onnxSuccess = false;
+
+    try {
+        const sess = await getSession();
+
+        const features = new Float32Array([
+            input.rainfall,
+            input.wind,
+            input.tides,
+            input.waves,
+            input.sst,
+            input.community,
+            hourSin,
+            hourCos,
+            monthSin,
+            monthCos,
+            isWeekend,
+            rainTrend,
+            geomIdx
+        ]);
+
+        const tensor = new ort.Tensor('float32', features, [1, 13]);
+        const feeds = { x: tensor };
+        const results = await sess.run(feeds);
+
+        const outputName = sess.outputNames[0];
+        const outputTensor = results[outputName];
+        residual = Number(outputTensor.data[0]);
+        onnxSuccess = true;
+    } catch (e) {
+        console.error("ONNX Inference failed, using physics fallback:", e);
+        // Fallback: residual = 0 (pure physics)
+        residual = 0;
+    }
+
+    // 3. Combine
     const riskScore = Math.min(Math.max(base + residual, 0), 1);
 
     // 4. Generate Grid
     const [lat0, lng0] = getCenter(input.lat, input.lng);
     const cells: RiskCell[] = [];
 
-    // Simple deterministic pseudo-random for jitter based on position
-    // We can't easily replicate the exact Python hash logic without extra libs, 
-    // so we'll use a simple math function of coordinates.
-
     for (let iy = 0; iy < 8; iy++) {
         for (let ix = 0; ix < 8; ix++) {
             const dlat = (iy - 3.5) * 0.01;
             const dlng = (ix - 3.5) * 0.01;
 
-            // Pseudo-random jitter based on coords and geomId
-            // Simple hash:
             const seed = (ix * 100 + iy) + input.geomId.charCodeAt(0);
-            const jitter = ((Math.sin(seed) * 10000) % 1000) / 1000.0; // 0..1
+            const jitter = ((Math.sin(seed) * 10000) % 1000) / 1000.0;
 
             const localScore = Math.min(Math.max(riskScore + (jitter - 0.5) * 0.08, 0), 1);
 
@@ -208,8 +212,8 @@ export async function predictRisk(input: InferenceInput): Promise<InferenceResul
             residual: Number(residual.toFixed(3))
         },
         meta: {
-            model_version: "v5_ensemble_js",
-            onnx: true,
+            model_version: onnxSuccess ? "v5_ensemble_js" : "v5_physics_fallback",
+            onnx: onnxSuccess,
             when: new Date().toISOString()
         }
     };

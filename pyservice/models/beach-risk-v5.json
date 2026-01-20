@@ -1,0 +1,43 @@
+{
+  "features": [
+    "rainfall72_mm",
+    "wind_ms",
+    "tide_phase",
+    "wave_height_m",
+    "sst_c",
+    "community_score",
+    "hour_sin",
+    "hour_cos",
+    "month_sin",
+    "month_cos",
+    "is_weekend",
+    "rain_trend_24h",
+    "geom_idx"
+  ],
+  "geoms": [
+    "IB",
+    "COR",
+    "PL",
+    "LJS",
+    "MB",
+    "OB"
+  ],
+  "rows": 6000,
+  "cv_r2_mean": 0.9341173491098264,
+  "cv_r2_std": 0.0018705935987731665,
+  "cv_normal_recall": 1.0,
+  "cv_advisory_recall": 1.0,
+  "cv_closure_recall": 0.9855,
+  "test_r2": 0.9948688927971928,
+  "architecture": "ensemble_v5",
+  "models": [
+    "MLP(64,32)",
+    "GradientBoosting",
+    "RandomForest"
+  ],
+  "timestamp": "2026-01-20T00:10:56.912388Z",
+  "csv": "data/beach_training_balanced.csv",
+  "onnx": "models/beach-risk-v5.onnx",
+  "data_source": "EPA Water Quality Portal",
+  "balanced": true
+}

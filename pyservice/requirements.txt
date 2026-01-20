@@ -1,4 +1,8 @@
+# Runtime dependencies
 fastapi==0.115.0
 uvicorn==0.30.6
 onnxruntime==1.23.2
 numpy==2.1.1
+
+# Training dependencies (install separately if retraining)
+# pip install pandas scikit-learn skl2onnx

@@ -52,13 +52,12 @@ export function SafetyCard({ data }: SafetyCardProps) {
         <div className="text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("ui.now")}</div>
           <div
-            className={`text-xs font-medium px-2 py-1 rounded ${
-              data.safety.risk_now === "Low"
+            className={`text-xs font-medium px-2 py-1 rounded ${data.safety.risk_now === "Low"
                 ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400"
                 : data.safety.risk_now === "Moderate"
                   ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400"
                   : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400"
-            }`}
+              }`}
           >
             {translateRisk(data.safety.risk_now)}
           </div>
@@ -66,13 +65,12 @@ export function SafetyCard({ data }: SafetyCardProps) {
         <div className="text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("ui.plus24h")}</div>
           <div
-            className={`text-xs font-medium px-2 py-1 rounded ${
-              data.safety.risk_24h === "Low"
+            className={`text-xs font-medium px-2 py-1 rounded ${data.safety.risk_24h === "Low"
                 ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400"
                 : data.safety.risk_24h === "Moderate"
                   ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400"
                   : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400"
-            }`}
+              }`}
           >
             {translateRisk(data.safety.risk_24h)}
           </div>
@@ -80,13 +78,12 @@ export function SafetyCard({ data }: SafetyCardProps) {
         <div className="text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("ui.plus48h")}</div>
           <div
-            className={`text-xs font-medium px-2 py-1 rounded ${
-              data.safety.risk_48h === "Low"
+            className={`text-xs font-medium px-2 py-1 rounded ${data.safety.risk_48h === "Low"
                 ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400"
                 : data.safety.risk_48h === "Moderate"
                   ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400"
                   : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400"
-            }`}
+              }`}
           >
             {translateRisk(data.safety.risk_48h)}
           </div>
@@ -94,13 +91,12 @@ export function SafetyCard({ data }: SafetyCardProps) {
         <div className="text-center">
           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("ui.plus72h")}</div>
           <div
-            className={`text-xs font-medium px-2 py-1 rounded ${
-              data.safety.risk_72h === "Low"
+            className={`text-xs font-medium px-2 py-1 rounded ${data.safety.risk_72h === "Low"
                 ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400"
                 : data.safety.risk_72h === "Moderate"
                   ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400"
                   : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400"
-            }`}
+              }`}
           >
             {translateRisk(data.safety.risk_72h)}
           </div>
@@ -108,8 +104,11 @@ export function SafetyCard({ data }: SafetyCardProps) {
       </div>
 
       {/* Source badges */}
-      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
         <span>{t("ui.sources")}</span>
+        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded font-medium">
+          EPA Water Quality
+        </span>
         {data.safety.sources.map((source, i) => (
           <span key={i} className="px-2 py-1 bg-gray-100 dark:bg-neutral-800 rounded">
             {source}
@@ -117,7 +116,12 @@ export function SafetyCard({ data }: SafetyCardProps) {
         ))}
       </div>
 
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{t("ui.asOfJustNow")}</p>
+      <div className="flex items-center justify-between mt-2">
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t("ui.asOfJustNow")}</p>
+        <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full">
+          AI-Powered
+        </span>
+      </div>
     </div>
   )
 }

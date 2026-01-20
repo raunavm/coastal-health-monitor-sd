@@ -2,7 +2,7 @@
 
 import { useI18n } from "@/lib/i18n"
 import type { Summary } from "@/lib/forecast/fromTiles"
-import { Sparkles, AlertTriangle, CheckCircle, XCircle, Beaker } from "lucide-react"
+import { AlertTriangle, CheckCircle, XCircle, Beaker } from "lucide-react"
 
 type ForecastStripProps = {
   when: "now" | "t24" | "t48" | "t72"
@@ -74,9 +74,8 @@ export function ForecastStrip({
 
   const content = (
     <div
-      className={`rounded-xl border ${safetyColors[summary.safety]} p-4 transition-all ${
-        clickable ? "cursor-pointer hover:shadow-md" : ""
-      }`}
+      className={`rounded-xl border ${safetyColors[summary.safety]} p-4 transition-all ${clickable ? "cursor-pointer hover:shadow-md" : ""
+        }`}
       onClick={() => clickable && onTimeClick?.(when)}
     >
       {/* Time Label + Dev Mock Badge */}
@@ -90,11 +89,6 @@ export function ForecastStrip({
             >
               <Beaker className="h-3 w-3" />
               <span>{t("forecast.devMock")}</span>
-            </div>
-          )}
-          {summary.uncertainty > 0.5 && (
-            <div className="text-xs opacity-70" title={`Uncertainty: ${Math.round(summary.uncertainty * 100)}%`}>
-              <Sparkles className="h-3 w-3 inline" />
             </div>
           )}
         </div>
@@ -128,15 +122,12 @@ export function ForecastStrip({
         </div>
       )}
 
-      {/* Uncertainty Bar */}
-      <div className="mt-3 pt-3 border-t border-current/20">
-        <div className="flex items-center justify-between text-xs opacity-70">
-          <span>{t("uncertainty")}</span>
-          <span>{Math.round(summary.uncertainty * 100)}%</span>
-        </div>
-        <div className="mt-1 h-1 bg-white/30 dark:bg-black/20 rounded-full overflow-hidden">
-          <div className="h-full bg-current" style={{ width: `${summary.uncertainty * 100}%` }} />
-        </div>
+      {/* Simple AI Badge */}
+      <div className="mt-3 pt-3 border-t border-current/20 flex items-center justify-between">
+        <span className="text-xs opacity-70">AI-powered forecast</span>
+        <span className="text-xs px-2 py-0.5 rounded-full bg-white/40 dark:bg-black/30 font-medium">
+          {summary.uncertainty < 0.4 ? "High confidence" : "Moderate confidence"}
+        </span>
       </div>
     </div>
   )

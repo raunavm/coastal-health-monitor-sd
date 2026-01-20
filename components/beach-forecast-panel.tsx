@@ -5,7 +5,7 @@ import { useI18n } from "@/lib/i18n"
 import type { Beach } from "@/lib/types"
 import { ForecastStrip } from "./forecast-strip"
 import { summarizeTilesNearBeach, type Summary } from "@/lib/forecast/fromTiles"
-import { getNowEnv } from "@/lib/env/nowEnv"
+import { getEnvAtHorizon, type TimeHorizon } from "@/lib/env/nowEnv"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type BeachForecastPanelProps = {
@@ -26,12 +26,14 @@ export function BeachForecastPanel({ beach, officialStatus }: BeachForecastPanel
       setError(false)
 
       try {
-        const envBundle = await getNowEnv(beach.lat, beach.lng)
-        const timeHorizons: Array<"now" | "t24" | "t48" | "t72"> = ["now", "t24", "t48", "t72"]
+        const timeHorizons: Array<TimeHorizon> = ["now", "t24", "t48", "t72"]
 
         const results = await Promise.all(
           timeHorizons.map(async (when) => {
             try {
+              // Fetch env data specific to this time horizon
+              const envBundle = await getEnvAtHorizon(beach.lat, beach.lng, when)
+
               const res = await fetch(`/api/tiles?when=${when}`)
               if (!res.ok) throw new Error("Tiles API error")
               const data = await res.json()
@@ -65,10 +67,53 @@ export function BeachForecastPanel({ beach, officialStatus }: BeachForecastPanel
     fetchForecasts()
   }, [beach, officialStatus])
 
+  const getScoreColor = (score: number | undefined) => {
+    if (!score) return "text-gray-400"
+    if (score >= 80) return "text-green-600 dark:text-green-400"
+    if (score >= 60) return "text-amber-600 dark:text-amber-400"
+    return "text-red-600 dark:text-red-400"
+  }
+
   return (
     <div className="rounded-2xl border border-blue-200 dark:border-blue-900 bg-white dark:bg-neutral-950 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold">{t("aiPredictions")}</h3>
+      </div>
+
+      {/* Comfort Score Summary Grid */}
+      <div className="mb-4 p-4 rounded-xl bg-gray-50 dark:bg-neutral-900">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t("ui.comfortScore")}</h4>
+          <span className={`text-3xl font-bold ${getScoreColor(forecasts.now?.summary?.comfort)}`}>
+            {loading ? "—" : forecasts.now?.summary?.comfort ?? "—"}
+          </span>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          <div className="text-center">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("ui.now")}</div>
+            <div className={`text-lg font-bold ${getScoreColor(forecasts.now?.summary?.comfort)}`}>
+              {loading ? "—" : forecasts.now?.summary?.comfort ?? "—"}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("ui.plus24h")}</div>
+            <div className={`text-lg font-bold ${getScoreColor(forecasts.t24?.summary?.comfort)}`}>
+              {loading ? "—" : forecasts.t24?.summary?.comfort ?? "—"}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("ui.plus48h")}</div>
+            <div className={`text-lg font-bold ${getScoreColor(forecasts.t48?.summary?.comfort)}`}>
+              {loading ? "—" : forecasts.t48?.summary?.comfort ?? "—"}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{t("ui.plus72h")}</div>
+            <div className={`text-lg font-bold ${getScoreColor(forecasts.t72?.summary?.comfort)}`}>
+              {loading ? "—" : forecasts.t72?.summary?.comfort ?? "—"}
+            </div>
+          </div>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
@@ -118,3 +163,4 @@ export function BeachForecastPanel({ beach, officialStatus }: BeachForecastPanel
     </div>
   )
 }
+

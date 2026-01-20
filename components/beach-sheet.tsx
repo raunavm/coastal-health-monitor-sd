@@ -6,6 +6,8 @@ import type { Beach, AlertsResponse } from "@/lib/types"
 import { formatAsOf } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { useI18n } from "@/lib/i18n"
+import { calculateComfortScore } from "@/lib/comfort"
+import { getNowEnv } from "@/lib/env/nowEnv"
 
 interface BeachSheetProps {
   beach: Beach
@@ -16,6 +18,7 @@ export function BeachSheet({ beach, onClose }: BeachSheetProps) {
   const { t } = useI18n()
   const [data, setData] = useState<AlertsResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [unifiedComfort, setUnifiedComfort] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,6 +27,20 @@ export function BeachSheet({ beach, onClose }: BeachSheetProps) {
         const res = await fetch(`/api/alerts?beach_id=${beach.id}&lat=${beach.lat}&lng=${beach.lng}`)
         const json = await res.json()
         setData(json)
+
+        // Also calculate unified comfort score using the same formula as BeachForecastPanel
+        const envBundle = await getNowEnv(beach.lat, beach.lng)
+        const waterTempF = envBundle.sst != null ? (envBundle.sst * 9 / 5) + 32 : null
+        const comfort = calculateComfortScore({
+          airTemp: envBundle.airTemp ?? 70,
+          feelsLike: envBundle.feelsLike ?? envBundle.airTemp ?? 70,
+          waterTemp: waterTempF,
+          windSpeed: envBundle.wind ?? 8,
+          windDir: 270,
+          uvIndex: envBundle.uv ?? 5,
+          waveHeight: envBundle.waves ?? 2,
+        })
+        setUnifiedComfort(comfort)
       } catch (error) {
         console.error("Error fetching beach data:", error)
       } finally {
@@ -60,13 +77,12 @@ export function BeachSheet({ beach, onClose }: BeachSheetProps) {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">{t("safety")}</h3>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      data.safety.status === "Go"
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${data.safety.status === "Go"
                         ? "bg-green-600 text-white"
                         : data.safety.status === "Slow"
                           ? "bg-amber-500 text-white"
                           : "bg-red-600 text-white"
-                    }`}
+                      }`}
                   >
                     {data.safety.status === "Go" ? t("go") : data.safety.status === "Slow" ? t("slow") : t("noGo")}
                   </span>
@@ -90,13 +106,12 @@ export function BeachSheet({ beach, onClose }: BeachSheetProps) {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">{t("communityFeedback")}</h3>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        data.community.level === "minor"
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${data.community.level === "minor"
                           ? "bg-yellow-300 text-black"
                           : data.community.level === "moderate"
                             ? "bg-amber-500 text-white"
                             : "bg-red-600 text-white"
-                      }`}
+                        }`}
                       title={t("communityTooltip")}
                     >
                       {data.community.level === "minor"
@@ -129,7 +144,7 @@ export function BeachSheet({ beach, onClose }: BeachSheetProps) {
               <div className="rounded-2xl border border-gray-200 dark:border-neutral-800 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold">{t("comfort")}</h3>
-                  <span className="text-2xl font-bold">{data.comfort.score_now}</span>
+                  <span className="text-2xl font-bold">{unifiedComfort ?? data.comfort.score_now}</span>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-2">

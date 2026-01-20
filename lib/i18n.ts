@@ -1,6 +1,4 @@
 "use client"
-cat > lib/i18n.ts <<'TS'
-"use client"
 
 import React, { createContext, useContext, useMemo } from "react"
 import translations from "./translations.json"
@@ -16,7 +14,7 @@ type I18nShape = {
 const I18nCtx = createContext<I18nShape>({
   locale: "en",
   t: (k) => k,
-  setLocale: () => {},
+  setLocale: () => { },
 })
 
 function format(str: string, params?: Record<string, any>) {
@@ -45,7 +43,7 @@ export function I18nProvider({ children, locale: initialLocale }: { children: Re
     return { locale, t, setLocale: set }
   }, [locale])
 
-  return <I18nCtx.Provider value={value}>{children}</I18nCtx.Provider>
+  return <I18nCtx.Provider value={ value }> { children } </I18nCtx.Provider>
 }
 
 export function useI18n() {

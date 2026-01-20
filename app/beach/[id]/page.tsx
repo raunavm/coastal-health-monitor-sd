@@ -3,7 +3,6 @@ import { ArrowLeft } from "lucide-react"
 import { headers } from "next/headers"
 import type { Beach, AlertsResponse } from "@/lib/types"
 import { SafetyCard } from "@/components/safety-card"
-import { ComfortCard } from "@/components/comfort-card"
 import { Button } from "@/components/ui/button"
 import { BeachPageClient } from "@/components/beach-page-client"
 import { BeachForecastPanel } from "@/components/beach-forecast-panel"
@@ -105,13 +104,16 @@ export default async function BeachPage({ params }: { params: Promise<{ id: stri
               </div>
 
               {/* Forecast Panel */}
-              <BeachForecastPanel beach={beach} officialStatus={data.status} />
+              <BeachForecastPanel
+                beach={beach}
+                officialStatus={
+                  data.safety.official.state === "Closed" ? "closed" :
+                    data.safety.official.state === "Advisory" ? "advisory" : "open"
+                }
+              />
 
               {/* Safety Card */}
               <SafetyCard data={data} />
-
-              {/* Comfort Card */}
-              <ComfortCard data={data} />
 
               <BeachDetailClient data={data} />
 

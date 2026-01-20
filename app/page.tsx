@@ -11,7 +11,7 @@ import { haversine } from "@/lib/haversine"
 import { getRecentBeaches } from "@/lib/recent-beaches"
 import { ForecastStrip, ForecastStripSkeleton } from "@/components/forecast-strip"
 import { summarizeTilesNearBeach, type Summary } from "@/lib/forecast/fromTiles"
-import { getNowEnv } from "@/lib/env/nowEnv"
+import { getEnvAtHorizon, type TimeHorizon } from "@/lib/env/nowEnv"
 import { useRouter } from "next/navigation"
 
 interface Beach {
@@ -122,12 +122,14 @@ export default function HomePage() {
       setForecastError(false)
 
       try {
-        const envBundle = await getNowEnv(forecastBeach.lat, forecastBeach.lng)
-        const timeHorizons: Array<"now" | "t24" | "t48" | "t72"> = ["now", "t24"]
+        const timeHorizons: Array<TimeHorizon> = ["now", "t24"]
 
         const results = await Promise.all(
           timeHorizons.map(async (when) => {
             try {
+              // Fetch env data specific to this time horizon
+              const envBundle = await getEnvAtHorizon(forecastBeach.lat, forecastBeach.lng, when)
+
               const res = await fetch(`/api/tiles?when=${when}`)
               const data = await res.json()
 

@@ -1,4 +1,5 @@
 import type { Beach } from "../types"
+import { calculateComfortScore } from "../comfort"
 
 export type Safety = "go" | "slow" | "nogo"
 export type RiskClass = "low" | "medium" | "high"
@@ -16,15 +17,6 @@ function safetyFrom(risk: RiskClass, official?: "open" | "advisory" | "closed"):
   if (risk === "high") return "nogo"
   if (risk === "medium") return "slow"
   return "go"
-}
-
-function comfortFrom(env: { wind: number; sst: number; uv?: number; waves?: number }): number {
-  const sstScore = Math.max(0, Math.min(1, (env.sst - 12) / 12))
-  const windScore = 1 - Math.max(0, Math.min(1, env.wind / 15))
-  const wavesScore = env.waves != null ? 1 - Math.min(1, Math.abs(env.waves - 1.2) / 2.5) : 0.8
-  const uvScore = env.uv != null ? 1 - Math.min(1, env.uv / 10) : 0.8
-
-  return Math.round(100 * (0.35 * sstScore + 0.3 * windScore + 0.2 * wavesScore + 0.15 * uvScore))
 }
 
 export function summarizeTilesNearBeach(
@@ -48,11 +40,18 @@ export function summarizeTilesNearBeach(
   const risk = cells[0].riskClass
   const uncertainty = cells[0].uncertainty
 
-  const comfort = comfortFrom({
-    wind: envNow?.wind ?? 8,
-    sst: envNow?.sst ?? 18,
-    uv: envNow?.uv,
-    waves: envNow?.waves,
+  // Convert SST from Celsius to Fahrenheit for the unified comfort calculation
+  const waterTempF = envNow?.sst != null ? (envNow.sst * 9 / 5) + 32 : null
+
+  // Use the unified comfort score calculation from lib/comfort.ts
+  const comfort = calculateComfortScore({
+    airTemp: envNow?.airTemp ?? 70,
+    feelsLike: envNow?.feelsLike ?? envNow?.airTemp ?? 70,
+    waterTemp: waterTempF,
+    windSpeed: envNow?.wind ?? 8,
+    windDir: 270, // Default westerly wind if not available
+    uvIndex: envNow?.uv ?? 5,
+    waveHeight: envNow?.waves ?? 2,
   })
 
   const safety = safetyFrom(risk, official)
@@ -60,3 +59,4 @@ export function summarizeTilesNearBeach(
 
   return { safety, comfort, riskClass: risk, why, uncertainty }
 }
+

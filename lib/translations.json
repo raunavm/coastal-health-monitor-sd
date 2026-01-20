@@ -229,7 +229,12 @@
     "ui.sewageRiskAlert": "⚠️ Sewage Risk Alert",
     "ui.viewPFMData": "View PFM Data →",
     "ui.searchPlaceholder": "Search beaches…",
-    "ui.reportIssue": "Report Issue"
+    "ui.reportIssue": "Report Issue",
+    "aiAccuracy": "93% Accurate",
+    "aiDataSource": "Data source: EPA Water Quality Portal • Real-time bacteria monitoring",
+    "aiForecast": "AI-powered forecast",
+    "highConfidence": "High confidence",
+    "moderateConfidence": "Moderate confidence"
   },
   "es": {
     "home": "Inicio",
@@ -461,6 +466,11 @@
     "ui.sewageRiskAlert": "⚠️ Alerta de Riesgo de Aguas Residuales",
     "ui.viewPFMData": "Ver Datos PFM →",
     "ui.searchPlaceholder": "Buscar playas…",
-    "ui.reportIssue": "Reportar Problema"
+    "ui.reportIssue": "Reportar Problema",
+    "aiAccuracy": "93% de Precisión",
+    "aiDataSource": "Fuente: EPA Portal de Calidad del Agua • Monitoreo de bacterias en tiempo real",
+    "aiForecast": "Pronóstico con IA",
+    "highConfidence": "Alta confianza",
+    "moderateConfidence": "Confianza moderada"
   }
 }

@@ -192,13 +192,13 @@ export default function HomePage() {
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="text-xl font-bold text-blue-900 dark:text-blue-400">{t("aiPredictions")}</h2>
                 <span className="px-2 py-0.5 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
-                  93% Accurate
+                  {t("aiAccuracy")}
                 </span>
               </div>
               <p className="text-blue-800 dark:text-blue-300 text-sm mb-2">{t("aiDescription")}</p>
               <p className="text-blue-600 dark:text-blue-400 text-xs mb-3 flex items-center gap-1">
                 <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                Data source: EPA Water Quality Portal • Real-time bacteria monitoring
+                {t("aiDataSource")}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex items-center gap-2 text-sm">

@@ -124,9 +124,9 @@ export function ForecastStrip({
 
       {/* Simple AI Badge */}
       <div className="mt-3 pt-3 border-t border-current/20 flex items-center justify-between">
-        <span className="text-xs opacity-70">AI-powered forecast</span>
+        <span className="text-xs opacity-70">{t("aiForecast")}</span>
         <span className="text-xs px-2 py-0.5 rounded-full bg-white/40 dark:bg-black/30 font-medium">
-          {summary.uncertainty < 0.4 ? "High confidence" : "Moderate confidence"}
+          {summary.uncertainty < 0.4 ? t("highConfidence") : t("moderateConfidence")}
         </span>
       </div>
     </div>
